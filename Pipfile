@@ -4,20 +4,26 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
-pylint = "*"
+
 
 [packages]
 flask = "*"
 sqlalchemy = "*"
+flask-cors = "*"
 flask-sqlalchemy = "*"
 flask-migrate = "*"
 flask-swagger = "*"
+flask-script = "*"
+flask-bcrypt = "*"
+flask-ext = "*"
+flask-jwt = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 mysql-connector-python = "*"
-flask-cors = "*"
 gunicorn = "*"
 mysqlclient = "*"
+jwt = "*"
+
 
 [requires]
 python_version = "3.6"
