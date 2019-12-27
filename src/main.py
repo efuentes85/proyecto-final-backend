@@ -17,6 +17,7 @@ from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
+from sqlalchemy import exc
 #Aqui se importan las clases del models.py
 from models import db, User, Games
 
@@ -83,10 +84,17 @@ def signup():
         user.username = request.json.get("username")  
         user.role = "2"      
 
-        db.session.add(user)
-        db.session.commit()
+         #Aqui se valida si el usuario & email ya estan en uso, si ambos ya estan, no permite crearlo nuevamente
+        try:
+            db.session.add(user)  
+            db.session.commit()
+            return jsonify({"success": True}), 201 
+        except exc.IntegrityError as e:     
+            db.session().rollback()      
+            return jsonify("Error el usuario o correo ya existen en la DB!!"), 500
 
-        return jsonify({"success": True}), 201 
+
+        
 
 #Login del usuario
 #Este endpoint va a recuperar la clave de la DB y validará si el password es correcto.
@@ -117,12 +125,12 @@ def login():
 
 
 
-# #Listar todos los usuarios
-# @app.route('/user', methods=['GET'])
-# def get_all_users():
-#     users_query = User.query.all()
-#     all_users = list(map(lambda x: x.serialize(), users_query))
-#     return jsonify(all_users), 200
+#Listar todos los usuarios
+@app.route('/user', methods=['GET'])
+def get_all_users():
+    users_query = User.query.all()
+    all_users = list(map(lambda x: x.serialize(), users_query))
+    return jsonify(all_users), 200
 
 
 

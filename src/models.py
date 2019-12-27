@@ -4,13 +4,14 @@ db = SQLAlchemy()
 
 class User(db.Model):
     __tablename__="user"
-    ID = db.Column(db.Integer, primary_key=True)
+    ID = db.Column(db.Integer, primary_key=True, autoincrement=True, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     username = db.Column(db.String(80), unique=True, nullable=False)
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100)) 
     password = db.Column(db.String(256), nullable=False)
     role = db.Column(db.Integer)
+    bio = db.Column(db.Text)
 
 
     def __repr__(self):
