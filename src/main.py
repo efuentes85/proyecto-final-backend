@@ -7,7 +7,7 @@ import re
 from flask import Flask, request, jsonify, url_for
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
-from models import db, User
+from models import db, User, Team, User_Team, Games, Favoritos, Postulacion, Registro
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_swagger import swagger
@@ -82,6 +82,7 @@ def signup():
         user.firstname = request.json.get("firstname")
         user.lastname = request.json.get("lastname")
         user.username = request.json.get("username")  
+        #Por defecto se le agrega el Rol #2
         user.role = "2"      
 
          #Aqui se valida si el usuario & email ya estan en uso, si ambos ya estan, no permite crearlo nuevamente
@@ -93,9 +94,7 @@ def signup():
             db.session().rollback()      
             return jsonify("Error el usuario o correo ya existen en la DB!!"), 500
 
-
-        
-
+    
 #Login del usuario
 #Este endpoint va a recuperar la clave de la DB y validará si el password es correcto.
 @app.route("/login",methods=["POST"])

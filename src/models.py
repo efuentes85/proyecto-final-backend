@@ -2,6 +2,24 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
+User_Team = db.Table('User_Team',
+    db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
+    db.Column('team_ID', db.Integer, db.ForeignKey('team.ID'), primary_key=True),
+    db.Column('isMember', db.String(50))
+)
+
+Favoritos = db.Table('Favoritos', 
+    db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
+    db.Column('games_ID', db.Integer, db.ForeignKey('games.ID'), primary_key=True)
+)
+
+Registro = db.Table('Registro',
+    db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
+    db.Column('postulacion_ID', db.Integer, db.ForeignKey('postulacion.ID'), primary_key=True),
+    db.Column('status', db.String(50))
+)
+
 class User(db.Model):
     __tablename__="user"
     ID = db.Column(db.Integer, primary_key=True, autoincrement=True, index=True)
@@ -12,6 +30,9 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     role = db.Column(db.Integer)
     bio = db.Column(db.Text)
+    user_team = db.relationship("Team", secondary = User_Team , backref= 'user')
+    user_fav = db.relationship("Games", secondary = Favoritos , backref= 'user')
+    user_reg = db.relationship("Postulacion", secondary = Registro , backref= 'user')
 
 
     def __repr__(self):
@@ -26,11 +47,31 @@ class User(db.Model):
 
         }
 
+class Team(db.Model):
+    __tablename__="team"
+    ID = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200))
+    bio = db.Column(db.Text)
+    tag = db.Column(db.String(30))
+    owner_ID = db.Column(db.Integer)
+    game_ID = db.Column(db.Integer, db.ForeignKey('games.ID'))
+    team_user = db.relationship('User', secondary = User_Team, backref='team')
+
+    
+    def serialize(self):
+        return {
+            "ID": self.ID,
+            "name": self.name,
+            "owner": self.owner
+                      
+        }        
 
 class Games(db.Model):
+    __tablename__="games"
     ID = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     logo = db.Column(db.String(100))
+    fav_user = db.relationship('User' , secondary = Favoritos , backref='games')
 
     
     def serialize(self):
@@ -40,3 +81,38 @@ class Games(db.Model):
             "logo": self.logo
                       
         }
+
+class Postulacion(db.Model):
+    __tablename__="postulacion"
+    ID = db.Column(db.Integer, primary_key=True)
+    start_date = db.Column(db.DATETIME)
+    end_date = db.Column(db.DATETIME)
+    status = db.Column(db.String(50))
+    team_ID = db.Column(db.Integer, db.ForeignKey('team.ID'))
+    postulacion_reg = db.relationship('User', secondary=Registro, backref ='postulacion')
+
+    
+    def serialize(self):
+        return {
+            "ID": self.ID,
+            "team": self.team_ID,
+            "status": self.status,
+            "start_date": self.start_date,
+            "end_date": self.end_date                      
+        }
+
+
+
+# class Registro(db.Model):
+#     __tablename__="registro"
+#     ID_user = db.Column(db.Integer,db.ForeignKey('User.ID') , primary_key=True)
+#     ID_postulacion = db.Column(db.Integer, db.ForeignKey('Postulacion.ID'), primary_key = True)
+#     status = db.Column(db.String(50))
+    
+#     def serialize(self):
+#         return {
+#             "ID_user": self.ID_user,
+#             "ID_postulacion": self.ID_postulacion,
+#             "status": self.status                             
+#         }
+
