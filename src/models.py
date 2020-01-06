@@ -3,18 +3,18 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
-User_Team = db.Table('User_Team',
+User_Team = db.Table('user_team',
     db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
     db.Column('team_ID', db.Integer, db.ForeignKey('team.ID'), primary_key=True),
     db.Column('isMember', db.String(50))
 )
 
-Favoritos = db.Table('Favoritos', 
+Favoritos = db.Table('favoritos', 
     db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
     db.Column('games_ID', db.Integer, db.ForeignKey('games.ID'), primary_key=True)
 )
 
-Registro = db.Table('Registro',
+Registro = db.Table('registro',
     db.Column('user_ID', db.Integer, db.ForeignKey('user.ID'), primary_key=True),
     db.Column('postulacion_ID', db.Integer, db.ForeignKey('postulacion.ID'), primary_key=True),
     db.Column('status', db.String(50))
@@ -30,6 +30,7 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     role = db.Column(db.Integer)
     bio = db.Column(db.Text)
+    image = db.Column(db.String(200))
     user_team = db.relationship("Team", secondary = User_Team , backref= 'user')
     user_fav = db.relationship("Games", secondary = Favoritos , backref= 'user')
     user_reg = db.relationship("Postulacion", secondary = Registro , backref= 'user')
@@ -52,6 +53,7 @@ class Team(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
     bio = db.Column(db.Text)
+    logo = db.Column(db.String(200))
     tag = db.Column(db.String(30))
     owner_ID = db.Column(db.Integer)
     game_ID = db.Column(db.Integer, db.ForeignKey('games.ID'))
@@ -62,8 +64,9 @@ class Team(db.Model):
         return {
             "ID": self.ID,
             "name": self.name,
-            "owner": self.owner
-                      
+            "tag": self.tag,
+            "logo": self.logo,
+            "owner": self.owner_ID                      
         }        
 
 class Games(db.Model):

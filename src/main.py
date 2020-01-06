@@ -147,24 +147,58 @@ def get_all_users():
 
 
 
+#Endpoint para crear y listar games
+@app.route('/game', methods = ['GET', 'POST'])
+def game():
+    if request.method == 'GET':
+        games_query = Games.query.all()
+        all_games = list(map(lambda x: x.serialize(), games_query))
+        return jsonify(all_games), 200
+        
+    if request.method == 'POST':
+        body = request.get_json()
+        print(body.keys())   
+        games = Games(name=body['game'],
+                        logo=body['logo'])
+        db.session.add(games)
+        db.session.commit()
 
-@app.route('/game', methods=['GET'])
-def show_games():
-    games_query = Games.query.all()
-    all_games = list(map(lambda x: x.serialize(), games_query))
-    return jsonify(all_games), 200
+    return jsonify(games.serialize()), 201
 
 
-@app.route('/game', methods=['POST'])
-def create_game():
-    body = request.get_json()
-    print(body.keys())   
-    game = Games(name=body['game'],
-                    logo=body['logo'])
-    db.session.add(game)
-    db.session.commit()
+#Endpoint para crear equipos con POST y con GET para traer la lista de equipos
+@app.route('/teams', methods=['GET','POST'])
+def handle_team():
+    if request.method == 'POST':
+        body = request.get_json()
+        team = Team(name=body['name'],
+                    tag=body['tag'],
+                    owner_ID=body['owner_ID'],
+                    logo=body['logo'],
+                    game_ID=body['game_ID']
+                    )
+        db.session.add(team)
+        db.session.commit()
+    return jsonify(team.serialize()), 200
 
-    return jsonify(game.serialize()), 201
+
+    if request.method == 'GET':
+        team_query = Team.query.all()
+        list_team = list(map(lambda x: x.serialize(), team_query))        
+    return jsonify(list_team), 200
+
+   
+    
+
+#Endpoint para listar un equipo en particular por ID
+@app.route('/team/<int:team_ID>', methods=['GET'])
+def getTeamInfo(team_ID):        
+    team_query = Team.query.filter_by(ID=team_ID)
+    list_team = list(map(lambda x: x.serialize(), team_query))  
+    if not list_team:
+        return jsonify("No existe el equipo"), 404
+    
+    return jsonify(list_team), 200
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
