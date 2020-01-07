@@ -17,7 +17,7 @@ from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
-from sqlalchemy import exc
+from sqlalchemy import exc , update
 #Aqui se importan las clases del models.py
 from models import db, User, Games
 
@@ -79,8 +79,8 @@ def signup():
         else:
             return "Invalid password format", 400
         #Aqui vamos a pedir username (nick), first and last name para crear la cuenta
-        user.firstname = request.json.get("firstname")
-        user.lastname = request.json.get("lastname")
+        user.first_name = request.json.get("firstname")
+        user.last_name = request.json.get("lastname")
         user.username = request.json.get("username")  
         #Por defecto se le agrega el Rol #2
         user.role = "2"      
@@ -131,20 +131,34 @@ def get_all_users():
     all_users = list(map(lambda x: x.serialize(), users_query))
     return jsonify(all_users), 200
 
+#Endpoint para editar el usuario
+@app.route('/user/edit/<int:id_user>', methods=['PUT'])
+def handle_user_update(id_user):
+    body = request.get_json()
+    user1 = User.query.filter_by(ID=id_user).first()    
+   
+    if user1 is None:
+        raise APIException('User not found', status_code=404)
+    if "firstname" in body:
+          user1.first_name=body["firstname"]
+    if "lastname" in body:
+          user1.last_name=body["lastname"]
+    if "email" in body:
+         user1.email = body["email"]      
+    if "username " in body:
+        user1.username = body["username"]    
+    if "password" in body:
+        user1.password = body["password"]
+    if "role" in body:
+        user1.role = body["role"]
+    if "bio" in body:
+        user1.bio = body["bio"]   
+    if "image" in body:
+        user1.image = body["image"]
 
-
-# @app.route('/signup', methods=['POST'])
-# def create_user():
-#     body = request.get_json()
-#     user1 = User(username=body['username'],
-#                 first_name=body['first_name'] ,
-#                 last_name=body['last_name'] ,
-#                  email=body['email'],
-#                  role='2')
-#     db.session.add(user1)
-#     db.session.commit()
-#     return jsonify(user1.serialize()), 200
-
+    db.session.commit()
+ 
+    return jsonify("Done"),200
 
 
 #Endpoint para crear y listar games
@@ -158,8 +172,7 @@ def game():
     if request.method == 'POST':
         body = request.get_json()
         print(body.keys())   
-        games = Games(name=body['game'],
-                        logo=body['logo'])
+        games = Games(name=body['game'], logo=body['logo'])
         db.session.add(games)
         db.session.commit()
 
@@ -199,6 +212,22 @@ def getTeamInfo(team_ID):
         return jsonify("No existe el equipo"), 404
     
     return jsonify(list_team), 200
+
+
+#Endpoint para crear una postulacion
+# @app.route('/postulacion/create', methods=['POST'])
+# def handle_postulacion():
+#         body = request.get_json()
+#         team = Team(name=body['name'],
+#                     tag=body['tag'],
+#                     owner_ID=body['owner_ID'],
+#                     logo=body['logo'],
+#                     game_ID=body['game_ID']
+#                     )
+      
+# user1 = Person(username="my_super_username", email="my_super@email.com")
+# db.session.add(user1)
+# db.session.commit()    
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
