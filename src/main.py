@@ -194,14 +194,11 @@ def handle_team():
         db.session.commit()
     return jsonify(team.serialize()), 200
 
-
     if request.method == 'GET':
         team_query = Team.query.all()
         list_team = list(map(lambda x: x.serialize(), team_query))        
     return jsonify(list_team), 200
 
-   
-    
 
 #Endpoint para listar un equipo en particular por ID
 @app.route('/team/<int:team_ID>', methods=['GET'])
@@ -214,20 +211,43 @@ def getTeamInfo(team_ID):
     return jsonify(list_team), 200
 
 
-#Endpoint para crear una postulacion
-# @app.route('/postulacion/create', methods=['POST'])
-# def handle_postulacion():
-#         body = request.get_json()
-#         team = Team(name=body['name'],
-#                     tag=body['tag'],
-#                     owner_ID=body['owner_ID'],
-#                     logo=body['logo'],
-#                     game_ID=body['game_ID']
-#                     )
-      
-# user1 = Person(username="my_super_username", email="my_super@email.com")
-# db.session.add(user1)
-# db.session.commit()    
+#Endpoint para crear una postulacion, la fecha debe venir como yyyy-mm-dd hh:mm:ss
+@app.route('/postulacion/create', methods=['POST'])
+def handle_postulacion():
+    body = request.get_json()
+    postulacion = Postulacion(start_date=body['start_date'],end_date=body['end_date'],team_ID=body['team_ID'] ,status='Abierta')
+ 
+    db.session.add(postulacion)
+    db.session.commit()    
+    return jsonify("Postulacion creada"), 200
+
+#Endpoint para hacer un update sobre la postulacion
+@app.route('/postulacion/<int:id_postulacion>', methods=['PUT'])
+def update_postulacion(id_postulacion):
+    body = request.get_json()
+    postulacion = Postulacion.query.filter_by(ID=id_postulacion).first()  
+     
+    if postulacion is None:
+        raise APIException('Postulacion not found', status_code=404)
+    if "end_date" in body:
+        postulacion.end_date=body["end_date"]     
+    if "status" in body:
+        postulacion.status=body["status"]     
+
+    db.session.commit()    
+    return jsonify("Postulacion actualizada" ), 200
+
+
+#Endpoint de registro, este se utiliza para que un usuario postule a un equipo
+@app.route('/registro', methods=['POST'])
+def handle_registro():
+    body = request.get_json()
+    regs = Registro(user_ID=body['user_ID'],postulacion_ID=body['postulacion_ID'],status='Enviada')
+ 
+    db.session.add(regs)
+    db.session.commit()    
+    return jsonify("Postulacion enviada"), 200
+
 
 # this only runs if `$ python src/main.py` is executed
 if __name__ == '__main__':
