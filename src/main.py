@@ -17,8 +17,8 @@ from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
-from sqlalchemy import exc , update
-#Aqui se importan las clases del models.py
+from sqlalchemy import exc, update
+# Aqui se importan las clases del models.py
 from models import db, User, Games
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -36,11 +36,10 @@ db.init_app(app)
 jwt = JWTManager(app)
 bcrypt = Bcrypt(app)
 CORS(app)
-Migrate = Migrate(app,db)
+Migrate = Migrate(app, db)
 
 Manager = Manager(app)
-Manager.add_command("db" , MigrateCommand)
-
+Manager.add_command("db", MigrateCommand)
 
 
 # Handle/serialize errors like a JSON object
@@ -54,50 +53,50 @@ def sitemap():
     return generate_sitemap(app)
 
 
-#Crear un usuario
-#Los Roles seran los siguientes:
-#El rol 1 será para el Administrador del sitio.
-#El rol 2 será para el Jugador, por defecto todos los usuarios nuevos.
-#El rol 3 será para el Manager del equipo.
+# Crear un usuario
+# Los Roles seran los siguientes:
+# El rol 1 será para el Administrador del sitio.
+# El rol 2 será para el Jugador, por defecto todos los usuarios nuevos.
+# El rol 3 será para el Manager del equipo.
 @app.route("/signup", methods=["POST"])
 def signup():
-        #Regular expression that checks a valid email
-        ereg = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
-        #Regular expression that checks a valid password
-        preg = '^.*(?=.{8,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$'
-        # Instancing the a new user
-        user = User()
-        #Checking email 
-        if (re.search(ereg,request.json.get("email"))):
-            user.email = request.json.get("email")
-        else:
-            return "Invalid email format", 400
-        #Checking password
-        if (re.search(preg,request.json.get('password'))):
-            pw_hash = bcrypt.generate_password_hash(request.json.get("password"))
-            user.password = pw_hash
-        else:
-            return "Invalid password format", 400
-        #Aqui vamos a pedir username (nick), first and last name para crear la cuenta
-        user.first_name = request.json.get("firstname")
-        user.last_name = request.json.get("lastname")
-        user.username = request.json.get("username")  
-        #Por defecto se le agrega el Rol #2
-        user.role = "2"      
+    # Regular expression that checks a valid email
+    ereg = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
+    # Regular expression that checks a valid password
+    preg = '^.*(?=.{8,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$'
+    # Instancing the a new user
+    user = User()
+    # Checking email
+    if (re.search(ereg, request.json.get("email"))):
+        user.email = request.json.get("email")
+    else:
+        return "Invalid email format", 400
+    # Checking password
+    if (re.search(preg, request.json.get('password'))):
+        pw_hash = bcrypt.generate_password_hash(request.json.get("password"))
+        user.password = pw_hash
+    else:
+        return "Invalid password format", 400
+    # Aqui vamos a pedir username (nick), first and last name para crear la cuenta
+    user.first_name = request.json.get("firstname")
+    user.last_name = request.json.get("lastname")
+    user.username = request.json.get("username")
+    # Por defecto se le agrega el Rol #2
+    user.role = "2"
 
-         #Aqui se valida si el usuario & email ya estan en uso, si ambos ya estan, no permite crearlo nuevamente
-        try:
-            db.session.add(user)  
-            db.session.commit()
-            return jsonify({"success": True}), 201 
-        except exc.IntegrityError as e:     
-            db.session().rollback()      
-            return jsonify("Error el usuario o correo ya existen en la DB!!"), 500
+    # Aqui se valida si el usuario & email ya estan en uso, si ambos ya estan, no permite crearlo nuevamente
+    try:
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({"success": True}), 201
+    except exc.IntegrityError as e:
+        db.session().rollback()
+        return jsonify("Error el usuario o correo ya existen en la DB!!"), 500
 
-    
-#Login del usuario
-#Este endpoint va a recuperar la clave de la DB y validará si el password es correcto.
-@app.route("/login",methods=["POST"])
+
+# Login del usuario
+# Este endpoint va a recuperar la clave de la DB y validará si el password es correcto.
+@app.route("/login", methods=["POST"])
 def login():
     if not request.is_json:
         return jsonify({"msg": "Missing JSON in request"}), 400
@@ -107,71 +106,70 @@ def login():
         return jsonify({"msg": "Missing email parameter"}), 400
     if not password:
         return jsonify({"msg": "Missing password parameter"}), 400
-    
+
     user = User.query.filter_by(email=email).first()
 
     if user is None:
         return jsonify({"msg": "Email not found"}), 404
-    
+
     if bcrypt.check_password_hash(user.password, password):
         access_token = create_access_token(identity=email)
         data = {
             "access_token": access_token,
-            "user" : user.serialize(),
+            "user": user.serialize(),
             "msg": "success"
         }
         return jsonify(data), 200
 
 
-
-#Listar todos los usuarios
+# Listar todos los usuarios
 @app.route('/user', methods=['GET'])
 def get_all_users():
     users_query = User.query.all()
     all_users = list(map(lambda x: x.serialize(), users_query))
     return jsonify(all_users), 200
 
-#Endpoint para editar el usuario
+# Endpoint para editar el usuario
 @app.route('/user/edit/<int:id_user>', methods=['PUT'])
 def handle_user_update(id_user):
     body = request.get_json()
-    user1 = User.query.filter_by(ID=id_user).first()    
-   
+    user1 = User.query.filter_by(ID=id_user).first()
+
     if user1 is None:
         raise APIException('User not found', status_code=404)
     if "firstname" in body:
-          user1.first_name=body["firstname"]
+        user1.first_name = body["firstname"]
     if "lastname" in body:
-          user1.last_name=body["lastname"]
+        user1.last_name = body["lastname"]
     if "email" in body:
-         user1.email = body["email"]      
+        user1.email = body["email"]
     if "username " in body:
-        user1.username = body["username"]    
+        user1.username = body["username"]
     if "password" in body:
         user1.password = body["password"]
     if "role" in body:
         user1.role = body["role"]
     if "bio" in body:
-        user1.bio = body["bio"]   
+        user1.bio = body["bio"]
     if "image" in body:
         user1.image = body["image"]
 
     db.session.commit()
- 
-    return jsonify("Done"),200
+
+    return jsonify("Done"), 200
 
 
-#Endpoint para crear y listar games
-@app.route('/game', methods = ['GET', 'POST'])
+# Endpoint para crear y listar games
+@app.route('/game', methods=['GET', 'POST'])
 def game():
     if request.method == 'GET':
         games_query = Games.query.all()
         all_games = list(map(lambda x: x.serialize(), games_query))
         return jsonify(all_games), 200
-        
+
     if request.method == 'POST':
         body = request.get_json()
-        print(body.keys())   
+        print(body.keys())
         games = Games(name=body['game'], logo=body['logo'])
         db.session.add(games)
         db.session.commit()
@@ -179,8 +177,8 @@ def game():
     return jsonify(games.serialize()), 201
 
 
-#Endpoint para crear equipos con POST y con GET para traer la lista de equipos
-@app.route('/teams', methods=['GET','POST'])
+# Endpoint para crear equipos con POST y con GET para traer la lista de equipos
+@app.route('/teams', methods=['GET', 'POST'])
 def handle_team():
     if request.method == 'POST':
         body = request.get_json()
@@ -192,60 +190,65 @@ def handle_team():
                     )
         db.session.add(team)
         db.session.commit()
-    return jsonify(team.serialize()), 200
+        return jsonify(team.serialize()), 200
 
     if request.method == 'GET':
         team_query = Team.query.all()
-        list_team = list(map(lambda x: x.serialize(), team_query))        
-    return jsonify(list_team), 200
+        list_team = list(map(lambda x: x.serialize(), team_query))
+        return jsonify(list_team), 200
 
 
-#Endpoint para listar un equipo en particular por ID
+# Endpoint para listar un equipo en particular por ID
 @app.route('/team/<int:team_ID>', methods=['GET'])
-def getTeamInfo(team_ID):        
+def getTeamInfo(team_ID):
     team_query = Team.query.filter_by(ID=team_ID)
-    list_team = list(map(lambda x: x.serialize(), team_query))  
+    list_team = list(map(lambda x: x.serialize(), team_query))
     if not list_team:
         return jsonify("No existe el equipo"), 404
-    
+
     return jsonify(list_team), 200
 
 
-#Endpoint para crear una postulacion, la fecha debe venir como yyyy-mm-dd hh:mm:ss
+# Endpoint para crear una postulacion, la fecha debe venir como yyyy-mm-dd hh:mm:ss
 @app.route('/postulacion/create', methods=['POST'])
 def handle_postulacion():
     body = request.get_json()
-    postulacion = Postulacion(start_date=body['start_date'],end_date=body['end_date'],team_ID=body['team_ID'] ,status='Abierta')
- 
+    postulacion = Postulacion(
+        start_date=body['start_date'], end_date=body['end_date'], team_ID=body['team_ID'], status='Abierta')
+
     db.session.add(postulacion)
-    db.session.commit()    
+    db.session.commit()
     return jsonify("Postulacion creada"), 200
 
-#Endpoint para hacer un update sobre la postulacion
+# Endpoint para hacer un update sobre la postulacion
 @app.route('/postulacion/<int:id_postulacion>', methods=['PUT'])
 def update_postulacion(id_postulacion):
     body = request.get_json()
-    postulacion = Postulacion.query.filter_by(ID=id_postulacion).first()  
-     
+    postulacion = Postulacion.query.filter_by(ID=id_postulacion).first()
+
     if postulacion is None:
         raise APIException('Postulacion not found', status_code=404)
     if "end_date" in body:
-        postulacion.end_date=body["end_date"]     
+        postulacion.end_date = body["end_date"]
     if "status" in body:
-        postulacion.status=body["status"]     
+        postulacion.status = body["status"]
 
-    db.session.commit()    
-    return jsonify("Postulacion actualizada" ), 200
+    db.session.commit()
+    return jsonify("Postulacion actualizada"), 200
 
 
-#Endpoint de registro, este se utiliza para que un usuario postule a un equipo
+# Endpoint de registro, este se utiliza para que un usuario postule a un equipo
 @app.route('/registro', methods=['POST'])
 def handle_registro():
     body = request.get_json()
-    regs = Registro(user_ID=body['user_ID'],postulacion_ID=body['postulacion_ID'],status='Enviada')
- 
-    db.session.add(regs)
-    db.session.commit()    
+    post = Postulacion(ID=body['ID'])
+    print(post)
+    usr = User(username=body['username'])
+    print(usr)
+
+    # user_ID=body['user_ID'],postulacion_ID=body['postulacion_ID'],status='Enviada'
+
+    db.session.commit()
     return jsonify("Postulacion enviada"), 200
 
 
