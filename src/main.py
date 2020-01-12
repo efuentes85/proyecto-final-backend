@@ -19,7 +19,7 @@ from flask_jwt_extended import (
 )
 from sqlalchemy import exc, update
 # Aqui se importan las clases del models.py
-from models import db, User, Games
+from models import db, User, Games, User_Team
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -177,8 +177,8 @@ def game():
     return jsonify(games.serialize()), 201
 
 
-# Endpoint para crear equipos con POST y con GET para traer la lista de equipos
-@app.route('/teams', methods=['GET', 'POST'])
+# Endpoint para crear equipos con POST, con GET para traer la lista de equipos (TODOS) y con PUT para cambiar informacion del equipo dandola ID por el body
+@app.route('/teams', methods=['GET', 'POST', 'PUT'])
 def handle_team():
     if request.method == 'POST':
         body = request.get_json()
@@ -196,6 +196,28 @@ def handle_team():
         team_query = Team.query.all()
         list_team = list(map(lambda x: x.serialize(), team_query))
         return jsonify(list_team), 200
+
+    if request.method == 'PUT':
+        body = request.get_json()
+        team = Team.query.filter_by(ID=body['team_ID']).first()
+        print(team)
+        print(team.logo)
+
+        if team is None:
+            raise APIException('Team not found', status_code=404)
+        if "name" in body:
+            team.name = body["name"]
+        if "bio" in body:
+            team.bio = body["bio"]
+        if "logo" in body:
+            team.logo = body["logo"]
+        if "tag" in body:
+            team.tag = body["tag"]
+        if "owner_ID" in body:
+            team.owner_ID = body["owner_ID"]
+
+        db.session.commit()
+        return jsonify("Team Updated"), 200
 
 
 # Endpoint para listar un equipo en particular por ID
