@@ -205,8 +205,13 @@ def getTeamInfo(team_ID):
     list_team = list(map(lambda x: x.serialize(), team_query))
     if not list_team:
         return jsonify("No existe el equipo"), 404
-
     return jsonify(list_team), 200
+
+# Endpoint para listar team members de un equipo en particular
+@app.route('/team/<int:team_ID>/list', methods=['GET'])
+def getTeamMembers(team_ID):
+    team_query = Team.query.filter_by(ID=team_ID).first()
+    return jsonify(team_query.team_members()), 200
 
 
 # Endpoint para crear una postulacion, la fecha debe venir como yyyy-mm-dd hh:mm:ss
@@ -215,7 +220,6 @@ def handle_postulacion():
     body = request.get_json()
     postulacion = Postulacion(
         start_date=body['start_date'], end_date=body['end_date'], team_ID=body['team_ID'], status='Abierta')
-
     db.session.add(postulacion)
     db.session.commit()
     return jsonify("Postulacion creada"), 200
@@ -240,16 +244,39 @@ def update_postulacion(id_postulacion):
 # Endpoint de registro, este se utiliza para que un usuario postule a un equipo
 @app.route('/registro', methods=['POST'])
 def handle_registro():
+    if request.method == 'POST':
+        body = request.get_json()
+        post = Postulacion.query.filter_by(ID=body['ID']).first()
+        usr = User.query.filter_by(ID=body['IDUser']).first()
+        post.crear_post.append(usr)
+    try:
+        db.session.commit()
+        return jsonify("Postulacion creada"), 200
+    except exc.IntegrityError as e:
+        db.session().rollback()
+        return jsonify("El jugador ya tiene una postulacion activa"), 500
+
+# Endpoint para listar las postulaciones por team
+@app.route('/registro/<int:team_ID>/list', methods=['GET'])
+def getPostulacion(team_ID):
+    post = Postulacion.query.filter_by(ID=team_ID).first()
+    return jsonify(post.showPostulacion()), 200
+
+
+# Endpoint de asignar players a equipos
+@app.route('/team/reg', methods=['POST'])
+def handle_teamMember():
     body = request.get_json()
-    post = Postulacion(ID=body['ID'])
-    print(post)
-    usr = User(username=body['username'])
-    print(usr)
+    usr = User.query.filter_by(ID=body['IDUser']).first()
+    team = Team.query.filter_by(ID=body['IDTeam']).first()
+    team.team_member.append(usr)
 
-    # user_ID=body['user_ID'],postulacion_ID=body['postulacion_ID'],status='Enviada'
-
-    db.session.commit()
-    return jsonify("Postulacion enviada"), 200
+    try:
+        db.session.commit()
+        return jsonify(team.team_members()), 200
+    except exc.IntegrityError as e:
+        db.session().rollback()
+        return jsonify("Error el jugador ya pertenece al equipo, no se puede agregar"), 500
 
 
 # this only runs if `$ python src/main.py` is executed
