@@ -7,19 +7,19 @@ import re
 from flask import Flask, request, jsonify, url_for
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
+# Aqui se importan las clases del models.py
 from models import db, User, Team, User_Team, Games, Favoritos, Postulacion, Registro
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_swagger import swagger
-
 from utils import APIException, generate_sitemap
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
-from sqlalchemy import exc, update
+from sqlalchemy import exc, update, and_, or_, not_
 # Aqui se importan las clases del models.py
-from models import db, User, Games, User_Team
+
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -268,20 +268,44 @@ def update_postulacion(id_postulacion):
 def handle_registro():
     if request.method == 'POST':
         body = request.get_json()
-        post = Postulacion.query.filter_by(ID=body['ID']).first()
-        usr = User.query.filter_by(ID=body['IDUser']).first()
-        post.crear_post.append(usr)
+        reg = Registro(user_ID = body['user_ID'], postulacion_ID = body['postulacion_ID'], create_date = body['create_date'], status = "En Progreso")
+        # post = Postulacion.query.filter_by(ID=body['ID']).first()
+        # usr = User.query.filter_by(ID=body['IDUser']).first()
+        # post.crear_post.append(usr)  
+
     try:
+        db.session.add(reg)
         db.session.commit()
         return jsonify("Postulacion creada"), 200
     except exc.IntegrityError as e:
         db.session().rollback()
         return jsonify("El jugador ya tiene una postulacion activa"), 500
 
+
+# Endpoint para hacer un update del registro
+@app.route('/registro/update', methods=['POST'])
+def handle_registro_update():
+        body = request.get_json()
+        R2 = Registro.query.filter_by(
+            user_ID=body['user_ID'],  postulacion_ID=body['postulacion_ID'] , create_date=body['create_date']).first()
+       
+        if "status" in body:
+            R2.status = body["status"]
+      
+        db.session.commit()
+        return jsonify("Registro Actualizado"), 200
+        # body = request.get_json()
+        # reg2 = Registro.query.filter_by(
+        #     user_ID=body['user_ID'], postulacion_ID=body['postulacion_ID'], create_date=body['create_date']).first()
+        # reg2.status = body['status']
+        # db.session.commit()
+        # return jsonify("Registro Actualizado"), 200
+
+
 # Endpoint para listar las postulaciones por team
 @app.route('/registro/<int:team_ID>/list', methods=['GET'])
 def getPostulacion(team_ID):
-    post = Postulacion.query.filter_by(ID=team_ID).first()
+    post = Registro.query.filter_by(ID=team_ID).first()
     return jsonify(post.showPostulacion()), 200
 
 

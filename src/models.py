@@ -18,14 +18,6 @@ Favoritos = db.Table('favoritos',
                          'games.ID'), primary_key=True)
                      )
 
-Registro = db.Table('registro',
-                    db.Column('user_ID', db.Integer, db.ForeignKey(
-                        'user.ID'), primary_key=True),
-                    db.Column('postulacion_ID', db.Integer, db.ForeignKey(
-                        'postulacion.ID'), primary_key=True),
-                    db.Column('status', db.String(50))
-                    )
-
 
 class User(db.Model):
     __tablename__ = "user"
@@ -39,8 +31,8 @@ class User(db.Model):
     role = db.Column(db.Integer)
     bio = db.Column(db.Text)
     image = db.Column(db.String(200))
-    user_reg = db.relationship("Postulacion", secondary=Registro, backref=db.backref(
-        'crear_post', lazy='dynamic'))
+    # user_reg = db.relationship("Postulacion", secondary=Registro, backref=db.backref(
+    #     'crear_post', lazy='dynamic'))
     team_user = db.relationship(
         "Team", secondary=User_Team, backref=db.backref('team_member', lazy='dynamic'))
 
@@ -76,11 +68,6 @@ class Postulacion(db.Model):
             "status": self.status,
             "start_date": self.start_date,
             "end_date": self.end_date
-        }
-
-    def showPostulacion(self):
-        return {
-            "postulaciones": list(map(lambda x: x.serialize(), self.crear_post))
         }
 
 
@@ -124,4 +111,26 @@ class Games(db.Model):
             "name": self.name,
             "logo": self.logo
 
+        }
+
+
+class Registro(db.Model):
+    __tablename__ = "registro"
+    user_ID = db.Column(db.Integer, primary_key=True)
+    postulacion_ID = db.Column(db.Integer, primary_key=True)
+    create_date = db.Column(db.DATETIME, primary_key=True)
+    status = db.Column(db.String(50))
+
+    def serialize(self):
+        return {
+            "user_ID": self.user_ID,
+            "postulacion_ID": self.postulacion_ID,
+            "create_date": self.create_date,
+            "status": self.status
+
+        }
+
+    def showPostulacion(self):
+        return {
+            "postulaciones": list(map(lambda x: x.serialize(), self.postulacion_ID))
         }
