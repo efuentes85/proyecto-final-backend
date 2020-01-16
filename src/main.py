@@ -170,8 +170,9 @@ def game():
     if request.method == 'POST':
         body = request.get_json()
         print(body.keys())
-        games = Games(name=body['game'], logo=body['logo'])
-        db.session.add(games)
+        games = Games.query.filter_by(ID=body['ID']).first()
+        games.logo = body['logo']
+        games.game = body['game']
         db.session.commit()
 
     return jsonify(games.serialize()), 201
@@ -186,7 +187,7 @@ def handle_team():
                     tag=body['tag'],
                     owner_ID=body['owner_ID'],
                     logo=body['logo'],
-                    game_ID=body['game_ID']
+                    game_ID=body['game_ID']                    
                     )
         db.session.add(team)
         db.session.commit()
@@ -251,7 +252,6 @@ def handle_postulacion():
 def update_postulacion(id_postulacion):
     body = request.get_json()
     postulacion = Postulacion.query.filter_by(ID=id_postulacion).first()
-
     if postulacion is None:
         raise APIException('Postulacion not found', status_code=404)
     if "end_date" in body:
@@ -262,6 +262,14 @@ def update_postulacion(id_postulacion):
     db.session.commit()
     return jsonify("Postulacion actualizada"), 200
 
+  
+# Endpoint para listar todas las postulaciones por equipo
+@app.route('/postulacion/<int:id_team>', methods=['GET'])
+def getPostulacionbyTeam(id_team):
+    body = request.get_json()
+    postulacion = Postulacion.query.filter_by(team_ID=id_team)
+    list_team = list(map(lambda x: x.serialize(), postulacion))
+    return jsonify(list_team), 200
 
 # Endpoint de registro, este se utiliza para que un usuario postule a un equipo
 @app.route('/registro', methods=['POST'])
@@ -286,35 +294,30 @@ def handle_registro():
 @app.route('/registro/update', methods=['POST'])
 def handle_registro_update():
         body = request.get_json()
-        R2 = Registro.query.filter_by(
-            user_ID=body['user_ID'],  postulacion_ID=body['postulacion_ID'] , create_date=body['create_date']).first()
-       
-        if "status" in body:
-            R2.status = body["status"]
-      
+        reg = Registro.query.filter_by(ID=body['ID']).first()
+        reg.status = body['status']                  
         db.session.commit()
         return jsonify("Registro Actualizado"), 200
-        # body = request.get_json()
-        # reg2 = Registro.query.filter_by(
-        #     user_ID=body['user_ID'], postulacion_ID=body['postulacion_ID'], create_date=body['create_date']).first()
-        # reg2.status = body['status']
-        # db.session.commit()
-        # return jsonify("Registro Actualizado"), 200
+   
 
 
-# Endpoint para listar las postulaciones por team
-@app.route('/registro/<int:team_ID>/list', methods=['GET'])
-def getPostulacion(team_ID):
-    post = Registro.query.filter_by(ID=team_ID).first()
-    return jsonify(post.showPostulacion()), 200
+# Endpoint para listar las postulaciones por ID
+@app.route('/registro/<int:ID_post>/list', methods=['GET'])
+def getPostulacion(ID_post):
+    # post = Registro.query.get(postulacion_ID=ID)
+    reg = Registro.query.filter_by(postulacion_ID=ID_post)
+    list_team = list(map(lambda x: x.serialize(), reg))
+    return jsonify(list_team), 200
+
+   
 
 
 # Endpoint de asignar players a equipos
 @app.route('/team/reg', methods=['POST'])
 def handle_teamMember():
     body = request.get_json()
-    usr = User.query.filter_by(ID=body['IDUser']).first()
-    team = Team.query.filter_by(ID=body['IDTeam']).first()
+    usr = User.query.filter_by(ID=body['user_ID']).first()
+    team = Team.query.filter_by(ID=body['team_ID']).first()
     team.team_member.append(usr)
 
     try:

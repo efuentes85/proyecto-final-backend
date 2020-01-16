@@ -42,10 +42,14 @@ class User(db.Model):
     def serialize(self):
         return {
             "username": self.username,
-            "firstname": self.first_name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
             "email": self.email,
             "id": self.ID,
-            "role": self.role
+            "role": self.role,
+            "bio": self.bio,
+            "image": self.image
+
 
         }
 
@@ -87,7 +91,9 @@ class Team(db.Model):
             "name": self.name,
             "tag": self.tag,
             "logo": self.logo,
-            "owner": self.owner_ID
+            "owner": self.owner_ID,
+            "bio": self.bio,
+            "game_ID": self.game_ID
         }
 
     def team_members(self):
@@ -116,6 +122,8 @@ class Games(db.Model):
 
 class Registro(db.Model):
     __tablename__ = "registro"
+    ID = db.Column(db.Integer, primary_key=True,
+                   autoincrement=True, index=True)
     user_ID = db.Column(db.Integer, primary_key=True)
     postulacion_ID = db.Column(db.Integer, primary_key=True)
     create_date = db.Column(db.DATETIME, primary_key=True)
@@ -123,6 +131,7 @@ class Registro(db.Model):
 
     def serialize(self):
         return {
+            "ID": self.ID,
             "user_ID": self.user_ID,
             "postulacion_ID": self.postulacion_ID,
             "create_date": self.create_date,
