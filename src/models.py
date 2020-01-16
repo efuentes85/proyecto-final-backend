@@ -138,8 +138,3 @@ class Registro(db.Model):
             "status": self.status
 
         }
-
-    def showPostulacion(self):
-        return {
-            "postulaciones": list(map(lambda x: x.serialize(), self.postulacion_ID))
-        }

@@ -129,6 +129,14 @@ def get_all_users():
     all_users = list(map(lambda x: x.serialize(), users_query))
     return jsonify(all_users), 200
 
+
+# Listar usuario por nick
+@app.route('/user', methods=['POST'])
+def get_user():
+    body = request.get_json()
+    user = User.query.filter_by(username=body['username']).first()
+    return jsonify(user.serialize()), 200
+
 # Endpoint para editar el usuario
 @app.route('/user/edit/<int:id_user>', methods=['PUT'])
 def handle_user_update(id_user):
