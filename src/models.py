@@ -31,6 +31,7 @@ class User(db.Model):
     role = db.Column(db.Integer)
     bio = db.Column(db.Text)
     image = db.Column(db.String(200))
+    blizzardID = db.Column(db.String(100))
     # user_reg = db.relationship("Postulacion", secondary=Registro, backref=db.backref(
     #     'crear_post', lazy='dynamic'))
     team_user = db.relationship(
@@ -48,7 +49,8 @@ class User(db.Model):
             "id": self.ID,
             "role": self.role,
             "bio": self.bio,
-            "image": self.image
+            "image": self.image,
+            "blizzardID": self.blizzardID
 
 
         }

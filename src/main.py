@@ -161,6 +161,8 @@ def handle_user_update(id_user):
         user1.bio = body["bio"]
     if "image" in body:
         user1.image = body["image"]
+    if "blizzardID" in body:        
+        user1.blizzardID: body["blizzardID"]
 
     db.session.commit()
 
