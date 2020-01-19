@@ -81,6 +81,10 @@ def signup():
     user.first_name = request.json.get("firstname")
     user.last_name = request.json.get("lastname")
     user.username = request.json.get("username")
+    # Imagen y bio
+    user.image = request.json.get("image")
+    user.bio = request.json.get("bio")
+    user.blizzardID = request.json.get("blizzardID")
     # Por defecto se le agrega el Rol #2
     user.role = "2"
 
