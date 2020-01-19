@@ -7,19 +7,19 @@ import re
 from flask import Flask, request, jsonify, url_for
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
+# Aqui se importan las clases del models.py
 from models import db, User, Team, User_Team, Games, Favoritos, Postulacion, Registro
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_swagger import swagger
-
 from utils import APIException, generate_sitemap
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
     get_jwt_identity
 )
-from sqlalchemy import exc, update
+from sqlalchemy import exc, update, and_, or_, not_
 # Aqui se importan las clases del models.py
-from models import db, User, Games, User_Team
+
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -129,6 +129,14 @@ def get_all_users():
     all_users = list(map(lambda x: x.serialize(), users_query))
     return jsonify(all_users), 200
 
+
+# Listar usuario por nick
+@app.route('/user', methods=['POST'])
+def get_user():
+    body = request.get_json()
+    user = User.query.filter_by(username=body['username']).first()
+    return jsonify(user.serialize()), 200
+
 # Endpoint para editar el usuario
 @app.route('/user/edit/<int:id_user>', methods=['PUT'])
 def handle_user_update(id_user):
@@ -153,6 +161,8 @@ def handle_user_update(id_user):
         user1.bio = body["bio"]
     if "image" in body:
         user1.image = body["image"]
+    if "blizzardID" in body:        
+        user1.blizzardID: body["blizzardID"]
 
     db.session.commit()
 
@@ -170,8 +180,9 @@ def game():
     if request.method == 'POST':
         body = request.get_json()
         print(body.keys())
-        games = Games(name=body['game'], logo=body['logo'])
-        db.session.add(games)
+        games = Games.query.filter_by(ID=body['ID']).first()
+        games.logo = body['logo']
+        games.game = body['game']
         db.session.commit()
 
     return jsonify(games.serialize()), 201
@@ -186,7 +197,7 @@ def handle_team():
                     tag=body['tag'],
                     owner_ID=body['owner_ID'],
                     logo=body['logo'],
-                    game_ID=body['game_ID']
+                    game_ID=body['game_ID']                    
                     )
         db.session.add(team)
         db.session.commit()
@@ -251,7 +262,6 @@ def handle_postulacion():
 def update_postulacion(id_postulacion):
     body = request.get_json()
     postulacion = Postulacion.query.filter_by(ID=id_postulacion).first()
-
     if postulacion is None:
         raise APIException('Postulacion not found', status_code=404)
     if "end_date" in body:
@@ -262,35 +272,62 @@ def update_postulacion(id_postulacion):
     db.session.commit()
     return jsonify("Postulacion actualizada"), 200
 
+  
+# Endpoint para listar todas las postulaciones por equipo
+@app.route('/postulacion/<int:id_team>', methods=['GET'])
+def getPostulacionbyTeam(id_team):
+    body = request.get_json()
+    postulacion = Postulacion.query.filter_by(team_ID=id_team)
+    list_team = list(map(lambda x: x.serialize(), postulacion))
+    return jsonify(list_team), 200
 
 # Endpoint de registro, este se utiliza para que un usuario postule a un equipo
 @app.route('/registro', methods=['POST'])
 def handle_registro():
     if request.method == 'POST':
         body = request.get_json()
-        post = Postulacion.query.filter_by(ID=body['ID']).first()
-        usr = User.query.filter_by(ID=body['IDUser']).first()
-        post.crear_post.append(usr)
+        reg = Registro(user_ID = body['user_ID'], postulacion_ID = body['postulacion_ID'], create_date = body['create_date'], status = "En Progreso")
+        # post = Postulacion.query.filter_by(ID=body['ID']).first()
+        # usr = User.query.filter_by(ID=body['IDUser']).first()
+        # post.crear_post.append(usr)  
+
     try:
+        db.session.add(reg)
         db.session.commit()
         return jsonify("Postulacion creada"), 200
     except exc.IntegrityError as e:
         db.session().rollback()
         return jsonify("El jugador ya tiene una postulacion activa"), 500
 
-# Endpoint para listar las postulaciones por team
-@app.route('/registro/<int:team_ID>/list', methods=['GET'])
-def getPostulacion(team_ID):
-    post = Postulacion.query.filter_by(ID=team_ID).first()
-    return jsonify(post.showPostulacion()), 200
+
+# Endpoint para hacer un update del registro
+@app.route('/registro/update', methods=['POST'])
+def handle_registro_update():
+        body = request.get_json()
+        reg = Registro.query.filter_by(ID=body['ID']).first()
+        reg.status = body['status']                  
+        db.session.commit()
+        return jsonify("Registro Actualizado"), 200
+   
+
+
+# Endpoint para listar las postulaciones por ID
+@app.route('/registro/<int:ID_post>/list', methods=['GET'])
+def getPostulacion(ID_post):
+    # post = Registro.query.get(postulacion_ID=ID)
+    reg = Registro.query.filter_by(postulacion_ID=ID_post)
+    list_team = list(map(lambda x: x.serialize(), reg))
+    return jsonify(list_team), 200
+
+   
 
 
 # Endpoint de asignar players a equipos
 @app.route('/team/reg', methods=['POST'])
 def handle_teamMember():
     body = request.get_json()
-    usr = User.query.filter_by(ID=body['IDUser']).first()
-    team = Team.query.filter_by(ID=body['IDTeam']).first()
+    usr = User.query.filter_by(ID=body['user_ID']).first()
+    team = Team.query.filter_by(ID=body['team_ID']).first()
     team.team_member.append(usr)
 
     try:

@@ -18,14 +18,6 @@ Favoritos = db.Table('favoritos',
                          'games.ID'), primary_key=True)
                      )
 
-Registro = db.Table('registro',
-                    db.Column('user_ID', db.Integer, db.ForeignKey(
-                        'user.ID'), primary_key=True),
-                    db.Column('postulacion_ID', db.Integer, db.ForeignKey(
-                        'postulacion.ID'), primary_key=True),
-                    db.Column('status', db.String(50))
-                    )
-
 
 class User(db.Model):
     __tablename__ = "user"
@@ -39,8 +31,9 @@ class User(db.Model):
     role = db.Column(db.Integer)
     bio = db.Column(db.Text)
     image = db.Column(db.String(200))
-    user_reg = db.relationship("Postulacion", secondary=Registro, backref=db.backref(
-        'crear_post', lazy='dynamic'))
+    blizzardID = db.Column(db.String(100))
+    # user_reg = db.relationship("Postulacion", secondary=Registro, backref=db.backref(
+    #     'crear_post', lazy='dynamic'))
     team_user = db.relationship(
         "Team", secondary=User_Team, backref=db.backref('team_member', lazy='dynamic'))
 
@@ -50,10 +43,15 @@ class User(db.Model):
     def serialize(self):
         return {
             "username": self.username,
-            "firstname": self.first_name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
             "email": self.email,
             "id": self.ID,
-            "role": self.role
+            "role": self.role,
+            "bio": self.bio,
+            "image": self.image,
+            "blizzardID": self.blizzardID
+
 
         }
 
@@ -78,11 +76,6 @@ class Postulacion(db.Model):
             "end_date": self.end_date
         }
 
-    def showPostulacion(self):
-        return {
-            "postulaciones": list(map(lambda x: x.serialize(), self.crear_post))
-        }
-
 
 class Team(db.Model):
     __tablename__ = "team"
@@ -100,7 +93,9 @@ class Team(db.Model):
             "name": self.name,
             "tag": self.tag,
             "logo": self.logo,
-            "owner": self.owner_ID
+            "owner": self.owner_ID,
+            "bio": self.bio,
+            "game_ID": self.game_ID
         }
 
     def team_members(self):
@@ -123,5 +118,25 @@ class Games(db.Model):
             "ID": self.ID,
             "name": self.name,
             "logo": self.logo
+
+        }
+
+
+class Registro(db.Model):
+    __tablename__ = "registro"
+    ID = db.Column(db.Integer, primary_key=True,
+                   autoincrement=True, index=True)
+    user_ID = db.Column(db.Integer, primary_key=True)
+    postulacion_ID = db.Column(db.Integer, primary_key=True)
+    create_date = db.Column(db.DATETIME, primary_key=True)
+    status = db.Column(db.String(50))
+
+    def serialize(self):
+        return {
+            "ID": self.ID,
+            "user_ID": self.user_ID,
+            "postulacion_ID": self.postulacion_ID,
+            "create_date": self.create_date,
+            "status": self.status
 
         }
