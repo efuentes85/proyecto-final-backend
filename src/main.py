@@ -144,6 +144,10 @@ def get_user():
 # Endpoint para editar el usuario
 @app.route('/user/edit/<int:id_user>', methods=['PUT'])
 def handle_user_update(id_user):
+    # Regular expression that checks a valid email
+    ereg = '^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$'
+    # Regular expression that checks a valid password
+    preg = '^.*(?=.{8,})(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).*$'
     body = request.get_json()
     user1 = User.query.filter_by(ID=id_user).first()
 
@@ -154,11 +158,18 @@ def handle_user_update(id_user):
     if "lastname" in body:
         user1.last_name = body["lastname"]
     if "email" in body:
-        user1.email = body["email"]
+        if (re.search(ereg, request.json.get("email"))):
+            user1.email = request.json.get("email")
+        else:
+            return "Invalid email format", 400
     if "username " in body:
         user1.username = body["username"]
     if "password" in body:
-        user1.password = body["password"]
+        if (re.search(preg, request.json.get('password'))):
+            pw_hash = bcrypt.generate_password_hash(request.json.get("password"))
+            user1.password = pw_hash
+        else:
+            return "Invalid password format", 400
     if "role" in body:
         user1.role = body["role"]
     if "bio" in body:
