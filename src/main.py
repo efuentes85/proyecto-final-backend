@@ -256,9 +256,10 @@ def getTeamInfo(team_ID):
     return jsonify(list_team), 200
 
 # Endpoint para listar team members de un equipo en particular
-@app.route('/team/<int:team_ID>/list', methods=['GET'])
+@app.route('/team/list/<int:team_ID>', methods=['GET'])
 def getTeamMembers(team_ID):
     team_query = Team.query.filter_by(ID=team_ID).first()
+    print(team_query)
     return jsonify(team_query.team_members()), 200
 
 
@@ -327,14 +328,12 @@ def handle_registro_update():
 
 
 # Endpoint para listar las postulaciones por ID
-@app.route('/registro/<int:ID_post>/list', methods=['GET'])
+@app.route('/registro/list/<int:ID_post>', methods=['GET'])
 def getPostulacion(ID_post):
     # post = Registro.query.get(postulacion_ID=ID)
     reg = Registro.query.filter_by(postulacion_ID=ID_post)
     list_team = list(map(lambda x: x.serialize(), reg))
-    return jsonify(list_team), 200
-
-   
+    return jsonify(list_team), 200   
 
 
 # Endpoint de asignar players a equipos
